@@ -279,7 +279,7 @@ def iter_balanced_trans(opt, support_features, support_ys, query_features, query
 
         indices, ys = rank_per_class(support_ys.max() + 1, rank, query_ys_pred, opt.best_samples)
         if len(indices)<5:
-            break;
+            break
         pseudo_mask = np.in1d(np.arange(query_features.shape[0]), indices)
         pseudo_features, query_features = query_features[pseudo_mask], query_features[~pseudo_mask]
         pseudo_ys, query_ys_pred = query_ys_pred[pseudo_mask], query_ys_pred[~pseudo_mask]

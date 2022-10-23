@@ -11,7 +11,6 @@ import torch.nn as nn
 import torch.optim as optim
 import math
 import torch.nn.functional as F
-import torch.optim as optim
 from numpy import linalg as LA
 from sklearn.linear_model import LogisticRegression
 from tqdm.notebook import tqdm
@@ -228,9 +227,11 @@ def trans_ici(opt, X, Y, labelled_samples):
 
     return mean_confidence_interval(acc)
 
+
 def trans_ilpc(opt, X, Y, labelled_samples):
     acc = []
-    for i in range(X.shape[0]):
+    # for i in range(X.shape[0]):
+    for i in range(10):
         if i% 400==0:
             print("ilpc: ", i)
         support_features, query_features =  X[i,:labelled_samples], X[i,labelled_samples:] # X_pca[:labelled_samples], X_pca[labelled_samples:] #
