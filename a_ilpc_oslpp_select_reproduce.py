@@ -1,4 +1,6 @@
 import pickle
+
+import numpy
 import numpy as np
 import os
 import faiss
@@ -139,15 +141,16 @@ def select_initial_rejected(pseudo_probs, n_r):
 
 
 def select_closed_set_pseudo_labels(pseudo_labels, pseudo_probs, t, T):
+    if t >= T: t = T - 1
     selected = np.zeros_like(pseudo_labels)
     for c in np.unique(pseudo_labels):
         idxs = np.where(pseudo_labels == c)[0]
         Nc = len(idxs)
         if Nc > 0:
-            class_probs = pseudo_probs[idxs].mean(axis=1)
+            class_probs = pseudo_probs[idxs]
             class_probs = np.sort(class_probs)
-            threshold = class_probs[math.floor(Nc * (1 - t / (T - 1)))]
-            idxs2 = idxs[pseudo_probs[idxs].mean(axis=1) > threshold]
+            threshold = class_probs[math.floor(Nc*(1-t/(T-1)))]
+            idxs2 = idxs[pseudo_probs[idxs] > threshold]
             assert (selected[idxs2] == 0).all()
             selected[idxs2] = 1
     return selected
@@ -531,7 +534,15 @@ def iter_balanced_trans(opt, support_features, support_ys, query_features, query
     total_f = support_ys.shape[0] + query_ys.shape[0]
     iterations = int(query_ys.shape[0])
 
-    for t in range(1, 11):
+    # (feats_S, lbls_S), (feats_T, lbls_T) = (support_features, support_ys), (query_features, query_ys)
+    # # l2 normalization and pca
+    # feats_S, feats_T = do_l2_normalization(feats_S, feats_T)
+    # feats_S, feats_T = do_pca(feats_S, feats_T, 5)
+    # feats_S, feats_T = do_l2_normalization(feats_S, feats_T)
+    # feats_all = np.concatenate((feats_S, feats_T), axis=0)
+    pseudo_labels = -np.ones_like(query_ys)
+
+    for t in range(1, 6):
         query_ys_pred, probs, weights = update_plabels(opt, support_features, support_ys, query_features)
 
         P, query_ys_pred, indices = compute_optimal_transport(opt, torch.Tensor(probs))
@@ -546,7 +557,29 @@ def iter_balanced_trans(opt, support_features, support_ys, query_features, query
         # if len(indices) < 5:
         #     break
 
-        selected = select_closed_set_pseudo_labels(query_ys_pred, query_features.numpy(), t, 11)
+        # oslpp的图片和标签
+        (feats_S, lbls_S), (feats_T, lbls_T) = (support_features, support_ys), (query_features, query_ys)
+        if isinstance(feats_S, numpy.ndarray):
+            feats_S = support_features
+        else:
+            feats_S = support_features.numpy()
+        if isinstance(feats_T, numpy.ndarray):
+            feats_T = query_features
+        else:
+            feats_T = query_features.numpy()
+
+        # l2 normalization and pca
+        feats_S, feats_T = do_l2_normalization(feats_S, feats_T)
+        feats_S, feats_T = do_pca(feats_S, feats_T, 5)
+        feats_S, feats_T = do_l2_normalization(feats_S, feats_T)
+        feats_all = np.concatenate((feats_S, feats_T), axis=0)
+
+        P = get_projection_matrix(feats_all, np.concatenate((lbls_S, query_ys_pred), axis=0), 5)
+        proj_S, proj_T = project_features(P, feats_S), project_features(P, feats_T)
+        proj_S, proj_T = center_and_l2_normalize(proj_S, proj_T)
+        pseudo_labels, pseudo_probs = get_closed_set_pseudo_labels(proj_S, lbls_S, proj_T)
+        selected = select_closed_set_pseudo_labels(query_ys_pred, pseudo_probs, t, 6)
+
         indices = np.where(selected == 1)[0]
         # print(indices)
         pseudo_mask = np.in1d(np.arange(query_features.shape[0]), indices)
