@@ -231,7 +231,6 @@ def loadDataSet(dsname):
     # Loading data from files on computer
     dataset = _load_pickle(_datasetFeaturesFiles[dsname])
 
-
     global _min_examples
     _min_examples = dataset["labels"].shape[0]
     for i in range(dataset["labels"].shape[0]):
@@ -532,11 +531,13 @@ def mean_confidence_interval(data, confidence=0.95):
 def iter_balanced_trans(opt, support_features, support_ys, query_features, query_ys, labelled_samples):
     query_ys_updated = query_ys
     total_f = support_ys.shape[0] + query_ys.shape[0]
+
+
     iterations = int(query_ys.shape[0])
     pseudo_labels = -np.ones_like(query_ys)
     for t in range(1, 6):
         # query_ys_pred, probs, weights = update_plabels(opt, support_features, support_ys, query_features)
-
+        print(support_ys.shape)
         # P, query_ys_pred, indices = compute_optimal_transport(opt, torch.Tensor(probs))
 
         (feats_S, lbls_S), (feats_T, lbls_T) = (support_features, support_ys), (query_features, query_ys_updated)
@@ -546,7 +547,12 @@ def iter_balanced_trans(opt, support_features, support_ys, query_features, query
         feats_S, feats_T = do_l2_normalization(feats_S, feats_T)
         feats_all = np.concatenate((feats_S, feats_T), axis=0)
 
-        P = get_projection_matrix(feats_all, np.concatenate((lbls_S, query_ys_updated), axis=0), 5)
+        if query_ys_updated.shape == torch.Size([75]):
+            query_ys_pred_1 = pseudo_labels
+        else:
+            query_ys_pred_1 = query_ys_pred
+
+        P = get_projection_matrix(feats_all, np.concatenate((lbls_S, query_ys_pred_1), axis=0), 5)
         proj_S, proj_T = project_features(P, feats_S), project_features(P, feats_T)
         proj_S, proj_T = center_and_l2_normalize(proj_S, proj_T)
 

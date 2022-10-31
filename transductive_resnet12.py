@@ -1,6 +1,7 @@
-from data_closer.datamgr import SetDataManager, TransformLoader
+# from data_closer.datamgr import SetDataManager, TransformLoader
 from test_arguments import parse_option
-from models import res_mixup_model, wrn_mixup_model
+# from models import res_mixup_model
+import wrn_mixup_model
 import glob
 import sys
 #import torch.backends.cudnn as cudnn
@@ -192,28 +193,28 @@ def ici_test(params, model, data, ici):
 
 
 def dataloader_read(params, image_size):
-    if params.which_dataset == 'images':
-        datamgr = SetDataManager(params, image_size)
-        split = 'novel'
-        loadfile = configs.data_dir[params.dataset] + split + '.json'
-        data_loader = datamgr.get_data_loader(loadfile, aug=False)
-    else:
-        from pkl_dataset.transform_cfg import transforms_test_options, transforms_list
-        if params.dataset == 'miniImagenet':
-            from pkl_dataset.mini_imagenet import MetaImageNet
-            train_trans, test_trans = transforms_test_options[params.transform]
-            data_loader = DataLoader(MetaImageNet(args=params, partition='test',train_transform=train_trans,test_transform=test_trans,fix_seed=False),
-                                         batch_size=1, shuffle=False, drop_last=False, num_workers=params.num_workers)
-        elif params.dataset == 'tieredImagenet':
-            from pkl_dataset.tiered_imagenet import MetaTieredImageNet
-            train_trans, test_trans = transforms_test_options[params.transform]
-            data_loader = DataLoader(MetaTieredImageNet(args=params, partition='test', train_transform=train_trans, test_transform=test_trans,fix_seed=False),
-                                         batch_size=1, shuffle=False, drop_last=False,num_workers=params.num_workers)
-        elif params.dataset == 'cifar':
-            from pkl_dataset.cifar import MetaCIFAR100
-            train_trans, test_trans = transforms_test_options['D']
-            data_loader = DataLoader(MetaCIFAR100(args=params, partition='test', train_transform=train_trans, test_transform=test_trans, fix_seed=False),
-                                         batch_size=1, shuffle=False, drop_last=False, num_workers=params.num_workers)
+    # if params.which_dataset == 'images':
+    #     datamgr = SetDataManager(params, image_size)
+    #     split = 'novel'
+    #     loadfile = configs.data_dir[params.dataset] + split + '.json'
+    #     data_loader = datamgr.get_data_loader(loadfile, aug=False)
+    # else:
+    from pkl_dataset.transform_cfg import transforms_test_options, transforms_list
+    if params.dataset == 'miniImagenet':
+        from pkl_dataset.mini_imagenet import MetaImageNet
+        train_trans, test_trans = transforms_test_options[params.transform]
+        data_loader = DataLoader(MetaImageNet(args=params, partition='test',train_transform=train_trans,test_transform=test_trans,fix_seed=False),
+                                     batch_size=1, shuffle=False, drop_last=False, num_workers=params.num_workers)
+    elif params.dataset == 'tieredImagenet':
+        from pkl_dataset.tiered_imagenet import MetaTieredImageNet
+        train_trans, test_trans = transforms_test_options[params.transform]
+        data_loader = DataLoader(MetaTieredImageNet(args=params, partition='test', train_transform=train_trans, test_transform=test_trans,fix_seed=False),
+                                     batch_size=1, shuffle=False, drop_last=False,num_workers=params.num_workers)
+    elif params.dataset == 'cifar':
+        from pkl_dataset.cifar import MetaCIFAR100
+        train_trans, test_trans = transforms_test_options['D']
+        data_loader = DataLoader(MetaCIFAR100(args=params, partition='test', train_transform=train_trans, test_transform=test_trans, fix_seed=False),
+                                     batch_size=1, shuffle=False, drop_last=False, num_workers=params.num_workers)
     return data_loader
 
 def convert_to_few_shot_labels(data):
